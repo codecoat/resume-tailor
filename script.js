@@ -2,10 +2,11 @@ const fileInput = document.getElementById("fileInput");
 const rewriteBtn = document.getElementById("rewriteBtn");
 const preview = document.getElementById("preview");
 const downloadLink = document.getElementById("downloadLink");
+const jobDescInput = document.getElementById("jobDesc");
 
 let extractedText = "";
 
-// Step 1: Read .docx file
+// Read .docx file
 fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -23,27 +24,46 @@ fileInput.addEventListener("change", (e) => {
     reader.readAsArrayBuffer(file);
 });
 
-// Step 2: Simple rule-based rewriting (you can expand later)
-function rewriteText(text) {
+// Rewrite logic with job description keywords
+function rewriteText(text, jobDesc) {
     const lines = text.split("\n").map(l => l.trim()).filter(l => l);
     const actionVerbs = ['Led','Managed','Designed','Built','Created','Implemented','Improved','Reduced','Increased','Delivered','Developed','Automated','Optimized','Coordinated'];
-    
-    const rewritten = lines.map((line,i) => {
+
+    // Extract keywords from job description (simple approach)
+    const jobKeywords = jobDesc
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter(word => word.length > 3); // skip very short words
+
+    const rewritten = lines.map((line, i) => {
         let newLine = line;
-        if(!new RegExp(`^(${actionVerbs.join("|").toLowerCase()})`).test(line.toLowerCase())) {
+
+        // Add action verb if missing
+        if (!new RegExp(`^(${actionVerbs.join("|").toLowerCase()})`).test(line.toLowerCase())) {
             const verb = actionVerbs[i % actionVerbs.length];
             newLine = `${verb} ${line[0].toLowerCase() + line.slice(1)}`;
         }
+
+        // Include job keywords if found in the line
+        jobKeywords.forEach(keyword => {
+            if (!newLine.toLowerCase().includes(keyword)) {
+                newLine += ` (${keyword})`; // append keyword if not already present
+            }
+        });
+
         return newLine;
     });
+
     return rewritten.join("\n");
 }
 
-// Step 3: Generate new Word file
+// Generate new Word file
 rewriteBtn.addEventListener("click", () => {
     if(!extractedText) return alert("Upload a .docx file first!");
 
-    const rewrittenText = rewriteText(extractedText);
+    const jobDesc = jobDescInput.value || "";
+    const rewrittenText = rewriteText(extractedText, jobDesc);
     preview.textContent = rewrittenText;
 
     const { Document, Packer, Paragraph } = docx;
@@ -63,4 +83,3 @@ rewriteBtn.addEventListener("click", () => {
         downloadLink.textContent = "Download Rewritten Resume";
     });
 });
-
