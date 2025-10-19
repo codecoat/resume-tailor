@@ -10,9 +10,14 @@
 <body>
   <div class="container">
     <h1>Resume Rewriter</h1>
-    <p>Upload a Word document (.docx) and rewrite it while keeping the template.</p>
+    <p>Upload your resume and paste the job description to tailor it.</p>
 
+    <label for="fileInput">Upload Resume (.docx)</label>
     <input type="file" id="fileInput" accept=".docx"/>
+
+    <label for="jobDesc">Job Description</label>
+    <textarea id="jobDesc" placeholder="Paste the job description here..." rows="6"></textarea>
+
     <button id="rewriteBtn">Rewrite Resume</button>
     <a id="downloadLink" style="display:none;">Download Rewritten Resume</a>
 
