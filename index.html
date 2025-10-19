@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Resume Tailor — Free MVP</title>
+  <title>Resume Rewriter</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.6.0/docx.browser.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Resume Tailor — Free MVP</h1>
-    <p>Paste a job description and your resume. Click "Tailor" to get a better-aligned resume.</p>
+    <h1>Resume Rewriter</h1>
+    <p>Upload a Word document (.docx) and rewrite it while keeping the template.</p>
 
-    <textarea id="jobDesc" placeholder="Paste job description here"></textarea>
-    <textarea id="resumeText" placeholder="Paste resume text here"></textarea>
+    <input type="file" id="fileInput" accept=".docx"/>
+    <button id="rewriteBtn">Rewrite Resume</button>
+    <a id="downloadLink" style="display:none;">Download Rewritten Resume</a>
 
-    <button id="tailorBtn">Tailor my resume</button>
-    <button id="copyBtn">Copy Result</button>
-
-    <h2>Output</h2>
-    <pre id="result">Your tailored resume will appear here.</pre>
+    <h2>Preview</h2>
+    <pre id="preview"></pre>
   </div>
 
   <script src="script.js"></script>
