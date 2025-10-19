@@ -1,56 +1,66 @@
-function simpleTokenize(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s\-]/g, " ")
-    .split(" ")
-    .filter(t => t.length > 2 && !["the","and","with","from","that","this","for","you","your","are","have","has","will","can","our","their","they","but","not","use","using","who","which","such"].includes(t));
-}
+const fileInput = document.getElementById("fileInput");
+const rewriteBtn = document.getElementById("rewriteBtn");
+const preview = document.getElementById("preview");
+const downloadLink = document.getElementById("downloadLink");
 
-function extractTopKeywords(jobDesc, n=6) {
-  const tokens = simpleTokenize(jobDesc);
-  const counts = {};
-  tokens.forEach(t => counts[t] = (counts[t] || 0) + 1);
-  return Object.entries(counts)
-    .sort((a,b) => b[1]-a[1])
-    .slice(0,n)
-    .map(x => x[0]);
-}
+let extractedText = "";
 
-function tailorResume(resumeText, jobDesc) {
-  const lines = resumeText.split("\n").map(l => l.trim()).filter(l => l);
-  if(lines.length === 0) return "Paste your resume text here.";
-  
-  const keywords = extractTopKeywords(jobDesc, 6);
-  const header = lines.slice(0,2).join(" ");
+// Step 1: Read .docx file
+fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const actionVerbs = ['Led','Managed','Designed','Built','Created','Implemented','Improved','Reduced','Increased','Delivered','Developed','Automated','Optimized','Coordinated'];
-  
-  const rewritten = lines.slice(2).map((line,i) => {
-    let newLine = line;
-    if(!new RegExp(`^(${actionVerbs.join("|").toLowerCase()})`).test(line.toLowerCase())) {
-      const verb = actionVerbs[i % actionVerbs.length];
-      newLine = `${verb} ${line[0].toLowerCase() + line.slice(1)}`;
-    }
-
-    const injection = keywords.filter(kw => !line.toLowerCase().includes(kw)).slice(0,2);
-    if(injection.length) newLine += ` — focused on ${injection.join(", ")}`;
-
-    if(newLine.length > 200) newLine = newLine.slice(0,197) + "...";
-    return `- ${newLine}`;
-  });
-
-  return `--- Tailored resume (keywords: ${keywords.join(", ")}) ---\n\n${header}\n\n${rewritten.join("\n")}\n\n--- End ---`;
-}
-
-// --- Event listeners ---
-document.getElementById("tailorBtn").addEventListener("click", () => {
-  const jd = document.getElementById("jobDesc").value;
-  const resume = document.getElementById("resumeText").value;
-  document.getElementById("result").textContent = tailorResume(resume,jd);
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const arrayBuffer = event.target.result;
+        mammoth.extractRawText({arrayBuffer})
+            .then(result => {
+                extractedText = result.value;
+                preview.textContent = extractedText;
+            })
+            .catch(err => alert("Error reading file: " + err));
+    };
+    reader.readAsArrayBuffer(file);
 });
 
-document.getElementById("copyBtn").addEventListener("click", () => {
-  navigator.clipboard.writeText(document.getElementById("result").textContent)
-    .then(()=> alert("Copied to clipboard!"))
-    .catch(()=> alert("Copy failed"));
+// Step 2: Simple rule-based rewriting (you can expand later)
+function rewriteText(text) {
+    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+    const actionVerbs = ['Led','Managed','Designed','Built','Created','Implemented','Improved','Reduced','Increased','Delivered','Developed','Automated','Optimized','Coordinated'];
+    
+    const rewritten = lines.map((line,i) => {
+        let newLine = line;
+        if(!new RegExp(`^(${actionVerbs.join("|").toLowerCase()})`).test(line.toLowerCase())) {
+            const verb = actionVerbs[i % actionVerbs.length];
+            newLine = `${verb} ${line[0].toLowerCase() + line.slice(1)}`;
+        }
+        return newLine;
+    });
+    return rewritten.join("\n");
+}
+
+// Step 3: Generate new Word file
+rewriteBtn.addEventListener("click", () => {
+    if(!extractedText) return alert("Upload a .docx file first!");
+
+    const rewrittenText = rewriteText(extractedText);
+    preview.textContent = rewrittenText;
+
+    const { Document, Packer, Paragraph } = docx;
+
+    const doc = new Document({
+        sections: [{
+            properties: {},
+            children: rewrittenText.split("\n").map(line => new Paragraph(line))
+        }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = "Rewritten_Resume.docx";
+        downloadLink.style.display = "inline-block";
+        downloadLink.textContent = "Download Rewritten Resume";
+    });
 });
+
