@@ -1,85 +1,67 @@
-const fileInput = document.getElementById("fileInput");
-const rewriteBtn = document.getElementById("rewriteBtn");
-const preview = document.getElementById("preview");
-const downloadLink = document.getElementById("downloadLink");
-const jobDescInput = document.getElementById("jobDesc");
+const dropZone = document.getElementById('drop-zone');
+const resumeInput = document.getElementById('resume-input');
+const dropText = document.getElementById('drop-text');
+const jobDescInput = document.getElementById('job-desc');
+const generateBtn = document.getElementById('generate-btn');
+const downloadLink = document.getElementById('download-link');
+const themeToggle = document.getElementById('theme-toggle');
 
-let extractedText = "";
+// File upload handlers
+dropZone.addEventListener('click', () => resumeInput.click());
 
-// Read .docx file
-fileInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const arrayBuffer = event.target.result;
-        mammoth.extractRawText({arrayBuffer})
-            .then(result => {
-                extractedText = result.value;
-                preview.textContent = extractedText;
-            })
-            .catch(err => alert("Error reading file: " + err));
-    };
-    reader.readAsArrayBuffer(file);
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.style.backgroundColor = '#e0f0ff';
 });
 
-// Rewrite logic with job description keywords
-function rewriteText(text, jobDesc) {
-    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
-    const actionVerbs = ['Led','Managed','Designed','Built','Created','Implemented','Improved','Reduced','Increased','Delivered','Developed','Automated','Optimized','Coordinated'];
+dropZone.addEventListener('dragleave', e => {
+  e.preventDefault();
+  dropZone.style.backgroundColor = '';
+});
 
-    // Extract keywords from job description (simple approach)
-    const jobKeywords = jobDesc
-        .toLowerCase()
-        .replace(/[^\w\s]/g, "")
-        .split(/\s+/)
-        .filter(word => word.length > 3); // skip very short words
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  resumeInput.files = e.dataTransfer.files;
+  dropText.innerText = resumeInput.files[0].name;
+  dropZone.style.backgroundColor = '';
+});
 
-    const rewritten = lines.map((line, i) => {
-        let newLine = line;
+resumeInput.addEventListener('change', () => {
+  if (resumeInput.files.length > 0) {
+    dropText.innerText = resumeInput.files[0].name;
+  }
+});
 
-        // Add action verb if missing
-        if (!new RegExp(`^(${actionVerbs.join("|").toLowerCase()})`).test(line.toLowerCase())) {
-            const verb = actionVerbs[i % actionVerbs.length];
-            newLine = `${verb} ${line[0].toLowerCase() + line.slice(1)}`;
-        }
+// Dark/Light mode toggle
+themeToggle.addEventListener('change', () => {
+  document.body.classList.toggle('dark');
+  document.body.classList.toggle('light');
+});
 
-        // Include job keywords if found in the line
-        jobKeywords.forEach(keyword => {
-            if (!newLine.toLowerCase().includes(keyword)) {
-                newLine += ` (${keyword})`; // append keyword if not already present
-            }
-        });
+// Generate Resume
+generateBtn.addEventListener('click', async () => {
+  if (!resumeInput.files[0] || !jobDescInput.value) {
+    alert("Upload resume and enter job description");
+    return;
+  }
 
-        return newLine;
+  const formData = new FormData();
+  formData.append('resume', resumeInput.files[0]);
+  formData.append('jobDesc', jobDescInput.value);
+
+  try {
+    const res = await fetch('http://localhost:5000/generate', {
+      method: 'POST',
+      body: formData
     });
 
-    return rewritten.join("\n");
-}
+    if (!res.ok) throw new Error('Error generating resume');
 
-// Generate new Word file
-rewriteBtn.addEventListener("click", () => {
-    if(!extractedText) return alert("Upload a .docx file first!");
-
-    const jobDesc = jobDescInput.value || "";
-    const rewrittenText = rewriteText(extractedText, jobDesc);
-    preview.textContent = rewrittenText;
-
-    const { Document, Packer, Paragraph } = docx;
-
-    const doc = new Document({
-        sections: [{
-            properties: {},
-            children: rewrittenText.split("\n").map(line => new Paragraph(line))
-        }]
-    });
-
-    Packer.toBlob(doc).then(blob => {
-        const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
-        downloadLink.download = "Rewritten_Resume.docx";
-        downloadLink.style.display = "inline-block";
-        downloadLink.textContent = "Download Rewritten Resume";
-    });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    downloadLink.href = url;
+    downloadLink.style.display = 'block';
+  } catch (err) {
+    alert(err.message);
+  }
 });
