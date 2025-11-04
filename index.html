@@ -2,28 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Resume Rewriter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Tailor</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.6.0/docx.browser.js"></script>
 </head>
-<body>
-  <div class="container">
-    <h1>Resume Rewriter</h1>
-    <p>Upload your resume and paste the job description to tailor it.</p>
+<body class="light">
+  <header>
+    <h1>Resume Tailor</h1>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="faq.html">FAQ</a>
+    </nav>
 
-    <label for="fileInput">Upload Resume (.docx)</label>
-    <input type="file" id="fileInput" accept=".docx"/>
+    <div class="toggle-container">
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider round"></span>
+      </label>
+      <span>Dark Mode</span>
+    </div>
+  </header>
 
-    <label for="jobDesc">Job Description</label>
-    <textarea id="jobDesc" placeholder="Paste the job description here..." rows="6"></textarea>
+  <main>
+    <section class="instructions">
+      <h2>How to Use</h2>
+      <ol>
+        <li>Upload your resume (.docx).</li>
+        <li>Paste the job description.</li>
+        <li>Click “Generate Tailored Resume”.</li>
+        <li>Download your updated resume!</li>
+      </ol>
+    </section>
 
-    <button id="rewriteBtn">Rewrite Resume</button>
-    <a id="downloadLink" style="display:none;">Download Rewritten Resume</a>
+    <section class="upload-section">
+      <div id="drop-zone" class="drop-zone">
+        <p id="drop-text">Drag & drop your resume here or click to upload</p>
+        <input type="file" id="resume-input" accept=".docx" hidden>
+      </div>
 
-    <h2>Preview</h2>
-    <pre id="preview"></pre>
-  </div>
+      <textarea id="job-desc" placeholder="Paste job description here..."></textarea>
+      <button id="generate-btn">Generate Tailored Resume</button>
+      <a id="download-link" style="display:none;" download="tailored_resume.docx">Download Tailored Resume</a>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
